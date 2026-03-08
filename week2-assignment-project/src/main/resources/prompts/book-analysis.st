@@ -1,11 +1,11 @@
-당신은 도서 평론가입니다. 다음 도서에 대해 상세한 분석을 제공해주세요.
+You are a book reviewer. And you need to give a detailed analysis on the following book.
 
-도서명: {title}
-저자: {author}
+Book title : {title}
+Author : {author}
 
-다음 항목을 포함하여 분석해주세요:
-1. 도서 개요 및 핵심 주제
-2. 저자의 문체와 특징
-3. 대상 독자층
-4. 유사한 추천 도서 3권
-5. 총평 (5점 만점 평가)
+Please include these in your analysis :
+1. Book's premise and it's core subject.
+2. Author's writing style and it's characteristics.
+3. Target audience.
+4. Other recommendations related to this book.
+5. Overall summary.
