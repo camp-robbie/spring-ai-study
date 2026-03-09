@@ -5,8 +5,10 @@ import com.study.springai.assignment.dto.BookRecommendRequest;
 import com.study.springai.assignment.dto.BookRecommendation;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.prompt.PromptTemplate;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -27,23 +29,39 @@ public class BookService {
      * ChatClient의 Fluent API를 사용하여 장르와 분위기에 맞는 도서를 추천합니다.
      */
     public String recommendBooks(BookRecommendRequest request) {
+        // user메시지 예시 입력
+        String userMessage = String.format("%s 장르의 %s 분위기를 가진 도서 %d 권을 추천해줘", request.genre(),request.mood(),request.count());
+
         return chatClient.prompt()
-            .user(buildRecommendPrompt(request))
-            .call()
-            .content();
+                // 역할 부여
+                .system("너는 20년 경력을 가진 도서관 사서이고 책 전문가로써 한국어로 책을 추천해줘")
+                // 유저 메시지 입력
+                .user(userMessage)
+                .call()
+                .content();
     }
 
     /**
      * TODO 2: 도서 분석 (Ch3 - 프롬프트 템플릿)
      * PromptTemplate과 외부 템플릿 파일을 사용하여 도서를 분석합니다.
      */
+    // 외부 필드
+    @Value("prompts/book-analysis.st")
+    private Resource analysisTemplate;
+
+    // 메소드
     public String analyzeBook(BookAnalysisRequest request) {
+        // PromptTemplate 생성 (외부 필드 기반)
+        PromptTemplate promptTemplate = new PromptTemplate(analysisTemplate);
+
+        // 실제 값으로 치환
         String prompt = bookAnalysisTemplate.create(Map.of(
             "title", request.title(),
             "author", request.author()
         )).getContents();
 
-        return chatClient.prompt()
+        // chatClient 를 통해 실행
+        return chatClient.prompt(promptTemplate.create()) // 생성된 프롬포트 전달
             .user(prompt)
             .call()
             .content();
