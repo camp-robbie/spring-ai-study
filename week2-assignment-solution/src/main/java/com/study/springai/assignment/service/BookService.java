@@ -4,6 +4,9 @@ import com.study.springai.assignment.dto.BookAnalysisRequest;
 import com.study.springai.assignment.dto.BookRecommendRequest;
 import com.study.springai.assignment.dto.BookRecommendation;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.chat.messages.SystemMessage;
+import org.springframework.ai.chat.messages.UserMessage;
+import org.springframework.ai.chat.prompt.Prompt;
 import org.springframework.ai.chat.prompt.PromptTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -29,12 +32,25 @@ public class BookService {
      * ChatClient의 Fluent API를 사용하여 장르와 분위기에 맞는 도서를 추천합니다.
      */
     public String recommendBooks(BookRecommendRequest request) {
+        // 시스템 메시지 예시 입력
+        String systemMessage = """
+                너는 도서 추천 전문가야. 반드시 모든 추천 내용은 한국어로만 작성해야하고, 외국어 단어나 다른 언어는 허용되지않아.
+                
+                예시 1.
+                사용자 : 소설 장르의 따뜻한 내용을 가진 도서 1권을 추천해줘.
+                답변 : 1.**"나미야 잡화점의 기적"**: 히가시노 게이오의 소설로, 시공간을 초월한 편지를 통해 따뜻한 위로와 감동을 전합니다
+                
+                예시 2.
+                사용자 : 자기개발 장르의 영감을 주는 도서 1권을 추천해줘.
+                답변 : 1. **내 마음을 읽는 시간** : 변지영 작가의 자기개발 도서로, 자아성찰을 할 수 있는 마음의 시간을 어떻게 사용하는지에 대해 영감을 줍니다.
+                """;
+
         // user메시지 예시 입력
         String userMessage = String.format("%s 장르의 %s 분위기를 가진 도서 %d 권을 추천해줘", request.genre(),request.mood(),request.count());
 
         return chatClient.prompt()
                 // 역할 부여
-                .system("너는 20년 경력을 가진 도서관 사서이고 책 전문가로써 한국어로 책을 추천해줘")
+                .system(systemMessage)
                 // 유저 메시지 입력
                 .user(userMessage)
                 .call()
@@ -46,7 +62,7 @@ public class BookService {
      * PromptTemplate과 외부 템플릿 파일을 사용하여 도서를 분석합니다.
      */
     // 외부 필드
-    @Value("prompts/book-analysis.st")
+    @Value("classpath:prompts/book-analysis.st")
     private Resource analysisTemplate;
 
     // 메소드
@@ -55,14 +71,13 @@ public class BookService {
         PromptTemplate promptTemplate = new PromptTemplate(analysisTemplate);
 
         // 실제 값으로 치환
-        String prompt = bookAnalysisTemplate.create(Map.of(
+        Prompt prompt = promptTemplate.create(Map.of(
             "title", request.title(),
             "author", request.author()
-        )).getContents();
+        ));
 
         // chatClient 를 통해 실행
-        return chatClient.prompt(promptTemplate.create()) // 생성된 프롬포트 전달
-            .user(prompt)
+        return chatClient.prompt(prompt) // 생성된 프롬포트 전달
             .call()
             .content();
     }
